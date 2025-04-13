@@ -1,0 +1,306 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        @page {
+            margin-top: 0.25in;
+            margin-left: 0.75in;
+            margin-right: 0.75in;
+        }
+        body {
+            font-family: "Times New Roman";
+            line-height: 1;
+            font-size: 11pt;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+        .hall-ticket-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        .hall-ticket-container {
+            display: inline-flex;
+            align-items: center;
+            white-space: nowrap;
+        }
+        .hall-ticket-boxes {
+            display: inline-flex;
+            gap: 0px;
+            margin-left: 10px;
+            flex-wrap: nowrap;
+        }
+        .box {
+            width: 18px;
+            height: 20px;
+            border: 1px solid black;
+            display: inline-block;
+            vertical-align: middle;
+        }
+        .regulation {
+            border: 2px solid gray;
+            border-radius: 8px;
+            padding: 5px 15px;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        .institute {
+            text-align: center;
+            font-weight: bold;
+            font-size: 18px;
+        }
+        .autonomous {
+            text-align: center;
+            font-weight: bold;
+            font-size: 14px;
+            margin-top: 5px;
+            margin-bottom: 5px;
+        }
+        .exam-details {
+            text-align: center;
+            font-size: 14px;
+            margin-top: 2px;
+            margin-bottom: 2px;
+            font-weight: normal;
+        }
+        .course-details {
+            text-align: center;
+            font-weight: bold;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+        .footer {
+            display: flex;
+            justify-content: space-between;
+            font-weight: bold;
+            margin-top: 5px;
+            margin-bottom: 5px;
+        }
+        .time-marks {
+            display: none; /* Hide the old time-marks div */
+        }
+        .section-header {
+            text-align: center;
+            font-weight: bold;
+            text-decoration: underline;
+            margin: 1px 0 1px 1px;
+            page-break-before: avoid;
+            font-size: 11px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+        }
+        
+        /* Allow tables to break across pages */
+        tr {
+            page-break-inside: avoid;
+        }
+        th, td {
+            border: 1px solid grey;
+            padding: 2px;
+            text-align: left;
+        }
+        .marks-col {
+            width: 7%;
+            text-align: center;
+        }
+        .co-bl-col {
+            width: 6%;
+            text-align: center;
+        }
+        .qno-col {
+            width: 3%;
+        }
+        .subq-col {
+            width: 3%;
+        }
+        .question-col {
+            width: 75%;
+        }
+        img {
+            max-width: 90%;
+            height: auto;
+            display: block;
+            margin: 15px auto; /* Using auto margin for horizontal centering */
+            text-align: center; /* Ensure text alignment is centered */
+        }
+        
+        .question-image {
+            page-break-inside: avoid;
+            text-align: center; /* Ensure containing div is centered */
+            width: 100%; /* Use full width of container */
+        }
+        
+        /* Improved image styling for PDF */
+        .pdf-question-image {
+            max-width: 85%; /* Slightly smaller than parent container */
+            height: auto !important; /* Maintain aspect ratio */
+            display: block;
+            margin: 15px auto; /* Center align images */
+            text-align: center;
+        }
+        .header * {
+            text-align: center;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="hall-ticket-row">
+            <div class="hall-ticket-container">
+                <span>Hall Ticket No.:</span>
+                <div class="hall-ticket-boxes">
+                    <div class="box"></div>
+                    <div class="box"></div>
+                    <div class="box"></div>
+                    <div class="box"></div>
+                    <div class="box"></div>
+                    <div class="box"></div>
+                    <div class="box"></div>
+                    <div class="box"></div>
+                    <div class="box"></div>
+                    <div class="box"></div>
+                </div>
+            </div>
+            <div class="regulation">{{ subject.regulation.name|default('') }}</div>
+        </div>
+
+        <div class="institute">{{ template.header.institution }}</div>
+        <div class="autonomous">({{ template.header.autonomous|default('AUTONOMOUS') }})</div>
+        <div class="exam-details" style="line-height: 1; font-weight: normal;">
+            {% set roman_numbers = {1: 'I', 2: 'II', 3: 'III', 4: 'IV'} %}
+        {{ roman_numbers[subject.year] }} B. Tech {{ roman_numbers[subject.semester] }} Sem - 
+            {% if template.header.exam_type == 'CIE-I' %}
+              Continuous Internal Examinations-I
+            {% elif template.header.exam_type == 'CIE-II' %}
+              Continuous Internal Examinations-II
+            {% else %}
+              Semester End Examinations
+            {% endif %}
+– {{ template.header.paper_type|default('Regular') }} - {{ template.header.exam_month|default('') }} {{ template.header.exam_year|default('') }}
+        </div>
+        <div class="course-details">{{ subject.course_name }}</div>
+        <div class="course-details">[{{ subject.course_code }}]</div>
+        <div class="course-details">{% if selected_departments|default([])|length > 1 %} (Common to {{ selected_departments|join(', ') }}){% else %}({{ subject.department.dept_id }}){% endif %}</div>
+
+        <div class="footer">
+            <div>Time: {{ template.header.time_hours }} hours</div>
+            <div>Max. Marks: {{ template.header.max_marks }}</div>
+        </div>
+        
+        <hr>
+    </div>
+
+    <table>
+        <tr>
+            <th class="qno-col"></th>
+            <th class="subq-col"></th>
+            <th class="question-col"><div class="section-header">PART-A</div>
+            <div style="text-align: center;">(Answer the Following, {{ part_a_questions|length }} X 2 = {{ part_a_questions|length * 2 }} Marks)</div></th>
+            <th class="marks-col">Marks</th>
+            <th class="co-bl-col">CO</th>
+            <th class="co-bl-col">BL</th>
+        </tr>
+        {% for question in part_a_questions %}
+        <tr>
+            <td>{% if loop.index0 == 0 %}1{% else %}{% endif %}</td>
+            <td>{{ ['a)', 'b)', 'c)', 'd)', 'e)', 'f)', 'g)', 'h)', 'i)', 'j)', 'k)', 'l)', 'm)', 'n)'][loop.index0] }}</td>
+            <td>{{ question.question_text|safe }}
+                {% if question.image_data %}
+                <div class="question-image">
+                    <img src="{{ question.image_data }}" alt="Question image" class="pdf-question-image"
+                         {% if question.resized_width is defined %}width="{{ question.resized_width }}"{% endif %}
+                         {% if question.resized_height is defined %}height="{{ question.resized_height }}"{% endif %}>
+                </div>
+                {% endif %}
+            </td>
+            <td class="marks-col">[{{ question.display_marks if question.display_marks is defined else question.marks }}M]</td>
+            <td class="co-bl-col">{{ question.co }}</td>
+            <td class="co-bl-col">{{ question.bl }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    
+
+    <table>
+        <tr>
+            <th class="qno-col" width=5%></th>
+            <th class="subq-col" width=5%></th>
+            <th class="question-col" width=75%><div class="section-header">PART-B</div>
+                <div style="text-align: center;">(Answer the following, {{ (template.partB|length / 2)|int }} X {{ template.partB[0].marks if template.partB else 8 }} = {{ ((template.partB|length / 2)|int) * (template.partB[0].marks if template.partB else 8) }} Marks)</div></th>
+            <th class="marks-col" width=5%>Marks</th>
+            <th class="co-bl-col" width=5%>CO</th>
+            <th class="co-bl-col" width=5%>BL</th>
+        </tr>
+        {% set unitIndex = namespace(current=0, last=0) %}
+        {% set question_counter = namespace(current=2, last_shown=0) %}
+        {% set split_question = namespace(active=false) %}
+        
+        {% for question in part_b_questions %}
+            {% if loop.first or unitIndex.current != question.unit %}
+                {% set unitIndex.current = question.unit %}
+                <tr>
+                    <td colspan="6" style="text-align: center; font-weight: bold;">UNIT-{{ question.unit }}</td>
+                </tr>
+            {% endif %}
+            
+            <!-- Display main question -->
+            <tr>
+                <!-- Show question number based on original web interface values that were gathered -->
+                {% if question.sub_label != 'b)' %}
+                    <td>{{ question.pdf_qno if question.pdf_qno is defined else question.qno }}</td>
+                {% else %}
+                    <td></td>
+                {% endif %}
+                <td>{{ question.sub_label if question.sub_label else '' }}</td>
+                <td>
+                    {{ question.question_text|safe }}
+                    {% if question.image_data %}
+                    <div class="question-image">
+                        <img src="{{ question.image_data }}" alt="Question image" class="pdf-question-image"
+                             {% if question.resized_width is defined %}width="{{ question.resized_width }}"{% endif %}
+                             {% if question.resized_height is defined %}height="{{ question.resized_height }}"{% endif %}>
+                    </div>
+                    {% endif %}
+                </td>
+                <td class="marks-col">[{{ question.display_marks if question.display_marks is defined else question.marks }}M]</td>
+                <td class="co-bl-col">{{ question.co }}</td>
+                <td class="co-bl-col">{{ question.bl }}</td>
+            </tr>
+            
+            <!-- Handle OR questions -->
+            {% set next_index = loop.index0 + 1 %}
+            {% if next_index < part_b_questions|length %}
+                {% set next_question = part_b_questions[next_index] %}
+                
+                <!-- For regular questions (no split) that share the same unit -->
+                {% if next_question.unit == question.unit and not question.sub_label %}
+                    <tr>
+                        <td colspan="6" style="text-align: center; font-weight: bold;">OR</td>
+                    </tr>
+                {% endif %}
+                
+                <!-- For split questions (a,b) - add OR after part b and before next question with same unit -->
+                {% if question.sub_label == 'b)' and next_index < part_b_questions|length %}
+                    {% if next_question.unit == question.unit %}
+                        <tr>
+                            <td colspan="6" style="text-align: center; font-weight: bold;">OR</td>
+                        </tr>
+                    {% endif %}
+                {% endif %}
+            {% endif %}
+            
+            <!-- Old question numbering logic removed -->
+        {% endfor %}
+    </table>
+</body>
+</html>

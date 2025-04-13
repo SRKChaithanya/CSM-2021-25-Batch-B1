@@ -1,0 +1,316 @@
+
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+    <h2>Subject Analysis - {{ subject.course_name }}</h2>
+    
+    <!-- Subject Information -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h4>Subject Information</h4>
+        </div>
+        <div class="card-body">
+            <p><strong>Course Code:</strong> {{ subject.course_code }}</p>
+            <p><strong>Course Name:</strong> {{ subject.course_name }}</p>
+            <p><strong>Year:</strong> {{ subject.year }}</p>
+            <p><strong>Semester:</strong> {{ subject.semester }}</p>
+        </div>
+    </div>
+
+    <!-- Question Bank Analysis -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h4>Question Bank Analysis - Bloom's Taxonomy Levels</h4>
+            <select id="unitFilter" class="form-select" onchange="updateBLCharts()">
+                <option value="all">All Units</option>
+                {% for unit in unit_bl_data.keys() %}
+                <option value="{{ unit }}">Unit {{ unit }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5 class="text-center">Number of Questions per BL Level</h5>
+                    <canvas id="blBarChart"></canvas>
+                </div>
+                <div class="col-md-6">
+                    <h5 class="text-center">BL Level Distribution</h5>
+                    <canvas id="blPieChart"></canvas>
+                </div>
+            </div>
+            <div class="mt-4">
+                <h5>Question Distribution by Bloom's Taxonomy Level</h5>
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>BL Level</th>
+                                <th>Name</th>
+                                <th>2 Marks</th>
+                                <th>5 Marks</th>
+                                <th>10 Marks</th>
+                                <th>Total</th>
+                            </tr>
+                        </thead>
+                        <tbody id="blTableBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Question Paper Analysis -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h4>Question Paper Analysis</h4>
+            <select id="examFilter" class="form-select" onchange="updatePaperChart()">
+                <option value="all">All Papers</option>
+                {% for exam_type in paper_data.keys() %}
+                <option value="{{ exam_type }}">{{ exam_type }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="card-body">
+            <canvas id="paperChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+let blBarChart;
+let blPieChart;
+let paperChart;
+const blData = {{ bl_data|tojson }};
+const unitBlData = {{ unit_bl_data|tojson }};
+const paperData = {{ paper_data|tojson }};
+const questionsByMarks = {{ questions_by_marks|tojson }};
+
+const blLevels = {
+    'L1': 'Remember',
+    'L2': 'Understand',
+    'L3': 'Apply',
+    'L4': 'Analyze',
+    'L5': 'Evaluate',
+    'L6': 'Create'
+};
+
+function ensureAllBLLevels(data) {
+    const completeData = {};
+    Object.keys(blLevels).forEach(level => {
+        completeData[level] = data[level] || 0;
+    });
+    return completeData;
+}
+
+function updateBLTable(data, questions) {
+    const tableBody = document.getElementById('blTableBody');
+    tableBody.innerHTML = '';
+    
+    let totalByMarks = { '2': 0, '5': 0, '10': 0 };
+    
+    Object.entries(blLevels).forEach(([level, name]) => {
+        const row = document.createElement('tr');
+        const countByMarks = { '2': 0, '5': 0, '10': 0 };
+        
+        questions.forEach(q => {
+            if (q.bl === level) {
+                countByMarks[q.marks.toString()]++;
+                totalByMarks[q.marks.toString()]++;
+            }
+        });
+        
+        const total = countByMarks['2'] + countByMarks['5'] + countByMarks['10'];
+        
+        row.innerHTML = `
+            <td>${level}</td>
+            <td>${name}</td>
+            <td>${countByMarks['2']}</td>
+            <td>${countByMarks['5']}</td>
+            <td>${countByMarks['10']}</td>
+            <td>${total}</td>
+        `;
+        tableBody.appendChild(row);
+    });
+    
+    // Add total row
+    const totalRow = document.createElement('tr');
+    const grandTotal = totalByMarks['2'] + totalByMarks['5'] + totalByMarks['10'];
+    totalRow.innerHTML = `
+        <td colspan="2"><strong>Total</strong></td>
+        <td><strong>${totalByMarks['2']}</strong></td>
+        <td><strong>${totalByMarks['5']}</strong></td>
+        <td><strong>${totalByMarks['10']}</strong></td>
+        <td><strong>${grandTotal}</strong></td>
+    `;
+    totalRow.classList.add('table-secondary');
+    tableBody.appendChild(totalRow);
+}
+
+// Color palette for BL levels
+const blColors = {
+    'L1': 'rgba(54, 162, 235, 0.7)',
+    'L2': 'rgba(255, 99, 132, 0.7)',
+    'L3': 'rgba(255, 206, 86, 0.7)',
+    'L4': 'rgba(75, 192, 192, 0.7)',
+    'L5': 'rgba(153, 102, 255, 0.7)',
+    'L6': 'rgba(255, 159, 64, 0.7)'
+};
+
+// Get colors for data keys
+function getColorsForData(data) {
+    return Object.keys(data).map(key => blColors[key] || `rgba(${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, 0.7)`);
+}
+
+function createBLBarChart(data) {
+    const ctx = document.getElementById('blBarChart');
+    if (blBarChart) blBarChart.destroy();
+    const completeData = ensureAllBLLevels(data);
+    const labels = Object.keys(completeData);
+    const values = Object.values(completeData);
+    
+    blBarChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Number of Questions',
+                data: values,
+                backgroundColor: getColorsForData(data),
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Number of Questions'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Bloom\'s Taxonomy Level'
+                    }
+                }
+            },
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Question Distribution by Bloom\'s Taxonomy Level'
+                }
+            }
+        }
+    });
+}
+
+function createBLPieChart(data) {
+    const ctx = document.getElementById('blPieChart');
+    if (blPieChart) blPieChart.destroy();
+    const labels = Object.keys(data);
+    const values = Object.values(data);
+    
+    blPieChart = new Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels: labels,
+            datasets: [{
+                data: values,
+                backgroundColor: getColorsForData(data),
+                borderColor: 'rgba(255, 255, 255, 0.8)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Percentage Distribution of BL Levels'
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const total = context.dataset.data.reduce((sum, val) => sum + val, 0);
+                            const value = context.raw;
+                            const percentage = ((value / total) * 100).toFixed(1);
+                            return `${context.label}: ${value} (${percentage}%)`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+function createPaperChart(data) {
+    const ctx = document.getElementById('paperChart');
+    if (paperChart) paperChart.destroy();
+    paperChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: Object.keys(data),
+            datasets: [{
+                label: 'Number of Questions',
+                data: Object.values(data),
+                backgroundColor: getColorsForData(data),
+                borderWidth: 1
+            }]
+        },
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            },
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Question Distribution in Papers'
+                }
+            }
+        }
+    });
+}
+
+function updateBLCharts() {
+    const unit = document.getElementById('unitFilter').value;
+    let chartData;
+    
+    if (unit === 'all') {
+        chartData = blData;
+        updateBLTable(chartData, questionsByMarks);
+    } else {
+        chartData = unitBlData[unit];
+        const unitQuestions = questionsByMarks.filter(q => q.unit === parseInt(unit));
+        updateBLTable(chartData, unitQuestions);
+    }
+    
+    createBLBarChart(chartData);
+    createBLPieChart(chartData);
+}
+
+function updatePaperChart() {
+    const examType = document.getElementById('examFilter').value;
+    if (examType === 'all') {
+        const allData = {};
+        Object.values(paperData).forEach(examData => {
+            Object.entries(examData).forEach(([bl, count]) => {
+                allData[bl] = (allData[bl] || 0) + count;
+            });
+        });
+        createPaperChart(allData);
+    } else {
+        createPaperChart(paperData[examType]);
+    }
+}
+
+// Initial chart creation
+updateBLCharts();
+updatePaperChart();
+</script>
+{% endblock %}

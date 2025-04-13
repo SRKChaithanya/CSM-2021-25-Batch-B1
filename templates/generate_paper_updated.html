@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <div class="card">
+            <div class="card-header">
+                <h2 class="mb-0">Generate Question Paper</h2>
+                <button type="button" class="btn btn-secondary" onclick="autoSelectQuestions()">Automated Selection</button>
+            </div>
+            <div class="card-body">
+                <form id="questionForm" method="POST" action="{{ url_for('generate_paper', template_id=template.id) }}">
+                    <div class="header">
+                        <div class="institute">{{ template.header.institution }}</div>
+                        <div class="autonomous">({{ template.header.autonomous }})</div>
+                        <div class="exam-details">
+                            {% set roman_numbers = {1: 'I', 2: 'II', 3: 'III', 4: 'IV'} %}
+                            {{ roman_numbers[subject.year] }} B. Tech {{ roman_numbers[subject.semester] }} Semester - 
+                            {% if template.exam_type == 'CIE-I' %}
+                                Continuous Internal Examination-I
+                            {% elif template.exam_type == 'CIE-II' %}
+                                Continuous Internal Examination-II
+                            {% else %}
+                                Semester End Examination
+                            {% endif %}
+                            - {{ template.header.exam_month }} {{ template.header.exam_year }}
+                        </div>
+                        <div class="details">{{ subject.course_name }} ({{ subject.course_code }})</div>
+                    </div>
+
+                    <input type="hidden" id="savedSelectionsInput" name="savedSelections" value="{{ savedSelections }}">
+                    <input type="hidden" id="partAData" name="partAData" value='{{ partA_json|safe }}'>
+                    <input type="hidden" id="partBData" name="partBData" value='{{ partB_json|safe }}'>
+
+                    <!-- Part A Section -->
+                    <div class="section-a mt-4">
+                        <h5>PART-A ({{ template.partA|length }} x {{ template.partA[0].marks if template.partA else 2 }} = {{ template.partA|length * (template.partA[0].marks if template.partA else 2) }} marks)</h5>
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th width="5%">Q.No</th>
+                                    <th width="15%">Unit</th>
+                                    <th width="5%">Marks</th>
+                                    <th width="55%">Question</th>
+                                    <th width="10%">CO</th>
+                                    <th width="10%">BL</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for q in template.partA %}
+                                <tr>
+                                    <td>1<span class="sub-question-label"></span></td>
+                                    <td>
+                                        <select class="form-select unit-select" name="partA_unit_{{ loop.index }}" required>
+                                            <option value="">Select Unit</option>
+                                            <option value="1" {% if q.unit == 1 %}selected{% endif %}>Unit 1</option>
+                                            <option value="2" {% if q.unit == 2 %}selected{% endif %}>Unit 2</option>
+                                            <option value="3" {% if q.unit == 3 %}selected{% endif %}>Unit 3</option>
+                                            <option value="4" {% if q.unit == 4 %}selected{% endif %}>Unit 4</option>
+                                            <option value="5" {% if q.unit == 5 %}selected{% endif %}>Unit 5</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="number" class="form-control marks-input" value="{{ q.marks }}" readonly style="width: 60px;"></td>
+                                    <td>
+                                        <select class="form-select question-select" name="partA_{{ loop.index }}" required data-unit="{{ q.unit }}" data-part="A" onchange="validateSelection(this)">
+                                            <option value="">Select a Question</option>
+                                        </select>
+                                    </td>
+                                    <td class="co-display"></td>
+                                    <td class="bl-display"></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Part B Section -->
+                    <div class="section-b mt-4">
+                        <h5>PART-B ({{ template.partB|length // 2 }} x {{ template.partB[0].marks if template.partB else 8 }} = {{ (template.partB|length // 2) * (template.partB[0].marks if template.partB else 8) }} marks)</h5>
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th width="5%">Q.No</th>
+                                    <th width="15%">Unit</th>
+                                    <th width="5%">Marks</th>
+                                    <th width="55%">Question</th>
+                                    <th width="10%">CO</th>
+                                    <th width="10%">BL</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% set question_number = 2 %}
+                                {% for i in range(0, template.partB|length, 2) %}
+                                {% set q = template.partB[i] %}
+                                <tr class="question-row" data-original-marks="{{ q.marks }}">
+                                    <td>{{ question_number }}<span class="sub-question-label"></span></td>
+                                    <td>
+                                        <select class="form-select unit-select" name="partB_unit_{{ i//2 + 1 }}" required>
+                                            <option value="">Select Unit</option>
+                                            <option value="1" {% if q.unit == 1 %}selected{% endif %}>Unit 1</option>
+                                            <option value="2" {% if q.unit == 2 %}selected{% endif %}>Unit 2</option>
+                                            <option value="3" {% if q.unit == 3 %}selected{% endif %}>Unit 3</option>
+                                            <option value="4" {% if q.unit == 4 %}selected{% endif %}>Unit 4</option>
+                                            <option value="5" {% if q.unit == 5 %}selected{% endif %}>Unit 5</option>
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <input type="number" class="form-control marks-input" name="marks_{{ i//2 + 1 }}" value="{{ q.marks }}" style="width: 60px;" readonly>
+                                    </td>
+                                    <td>
+                                        <select class="form-select question-select" name="partB_{{ i//2 + 1 }}" required data-unit="{{ q.unit }}" data-part="B" onchange="validateSelection(this)">
+                                            <option value="">Select a Question</option>
+                                        </select>
+                                        <button type="button" class="btn btn-link split-button" onclick="toggleSplit(this)">+</button>
+                                        <input type="hidden" name="partB_qno_{{ i//2 + 1 }}" value="{{ question_number }}">
+                                    </td>
+                                    <td class="co-display"></td>
+                                    <td class="bl-display"></td>
+                                </tr>
+                                <tr class="sub-question-row d-none">
+                                    <td><span class="sub-question-label"></span></td>
+                                    <td></td>
+                                    <td>
+                                        <input type="number" class="form-control marks-input" name="marks_{{ i//2 + 1 }}_sub" value="{{ q.marks // 2 }}" style="width: 60px;" disabled readonly>
+                                    </td>
+                                    <td>
+                                        <select class="form-select question-select" name="partB_{{ i//2 + 1 }}_sub" data-unit="{{ q.unit }}" data-part="B" onchange="validateSelection(this)" disabled>
+                                            <option value="">Select a Question</option>
+                                        </select>
+                                    </td>
+                                    <td class="co-display"></td>
+                                    <td class="bl-display"></td>
+                                </tr>
+                                {% if not loop.last %}
+                                <tr class="text-center">
+                                    <td colspan="6">OR</td>
+                                </tr>
+                                {% endif %}
+                                {% set question_number = question_number + 1 %}
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="form-actions mt-3">
+                        <button type="button" class="btn btn-primary" onclick="if(saveSelections()) document.getElementById('questionForm').submit();">Generate PDF</button>
+                        <button type="button" class="btn btn-info" id="previewBtn" onclick="previewPaper()">Preview</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Initialize global variables
+let questionBank = {};
+let selectedQuestions = new Set();
+
+// Add the subject code as a hidden field that main.js will use
+document.addEventListener('DOMContentLoaded', function() {
+    // Create subject code hidden input
+    const form = document.getElementById('questionForm');
+    if (form) {
+        const subjectCodeInput = document.createElement('input');
+        subjectCodeInput.type = 'hidden';
+        subjectCodeInput.id = 'subject-code';
+        subjectCodeInput.value = '{{ subject.course_code }}';
+        form.appendChild(subjectCodeInput);
+    }
+});
+
+// Preview function
+function previewPaper() {
+    const form = document.getElementById('questionForm');
+    if (!form) return;
+    
+    const formData = new FormData(form);
+    formData.append('preview', 'true');
+    
+    // Create a temporary form for preview submission
+    const tempForm = document.createElement('form');
+    tempForm.method = 'POST';
+    tempForm.action = window.location.href;
+    tempForm.style.display = 'none';
+    tempForm.target = '_blank';
+    
+    // Add all form data
+    for (let [name, value] of formData.entries()) {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = name;
+        input.value = value;
+        tempForm.appendChild(input);
+    }
+    
+    // Submit the form
+    document.body.appendChild(tempForm);
+    tempForm.submit();
+    document.body.removeChild(tempForm);
+}
+</script>
+{% endblock %}

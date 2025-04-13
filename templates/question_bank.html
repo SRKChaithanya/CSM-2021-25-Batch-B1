@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h3 class="mb-0">Question Bank - {{ subject.course_name }}</h3>
+                <div>
+                    <select class="form-select w-auto" id="unitFilter">
+                        <option value="">All Units</option>
+                        <option value="1">Unit 1</option>
+                        <option value="2">Unit 2</option>
+                        <option value="3">Unit 3</option>
+                        <option value="4">Unit 4</option>
+                        <option value="5">Unit 5</option>
+                    </select>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table question-bank-table">
+                        <thead>
+                            <tr>
+                                <th>Unit</th>
+                                <th>Question</th>
+                                <th>Marks</th>
+                                <th>CO</th>
+                                <th>BL</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for question in questions %}
+                            <tr data-unit="{{ question.unit }}">
+                                <td>{{ question.unit }}</td>
+                                <td>
+                                    <div class="question-text">{{ question.text }}</div>
+                                    {% if question.image_data %}
+                                    <div class="question-image-container mt-2">
+                                        <img src="data:image/png;base64,{{ question.image_data }}" 
+                                             alt="Question image" 
+                                             class="img-fluid question-image"
+                                             style="max-width: 300px;">
+                                    </div>
+                                    {% endif %}
+                                </td>
+                                <td>{{ question.marks }}</td>
+                                <td>{{ question.co }}</td>
+                                <td>{{ question.bl }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('unitFilter')?.addEventListener('change', function() {
+    const unit = this.value;
+    const rows = document.querySelectorAll('tbody tr');
+
+    rows.forEach(row => {
+        if (!unit || row.dataset.unit === unit) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+});
+</script>
+{% endblock %}

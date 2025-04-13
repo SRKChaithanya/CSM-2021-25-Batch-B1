@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <h2>Edit Template</h2>
+    <form method="POST" id="templateForm">
+        <!-- Header Information -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h3>Header Information</h3>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Template Name</label>
+                        <input type="text" class="form-control" name="template_name" value="{{ template.name }}" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Institution Name</label>
+                        <input type="text" class="form-control" name="institution" value="{{ template.header.institution }}" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Autonomous Status</label>
+                        <input type="text" class="form-control" name="autonomous" value="{{ template.header.autonomous if template.header.autonomous else 'AUTONOMOUS' }}" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Exam Type</label>
+                        <input type="text" class="form-control" name="exam_type" value="{{ template.exam_type }}" readonly>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Time (in hours)</label>
+                        <input type="number" class="form-control" name="time_hours" value="{{ template.header.time_hours }}" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Maximum Marks</label>
+                        <input type="number" class="form-control" name="max_marks" value="{{ template.header.max_marks }}" required>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Part A Questions -->
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h3>Part A</h3>
+                <button type="button" class="btn btn-primary" onclick="addPartAQuestion()">Add Question</button>
+            </div>
+            <div class="card-body">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Q.No</th>
+                            <th></th>
+                            <th>Unit</th>
+                            <th>Marks</th>
+                            <th>CO</th>
+                            <th>BL</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="partABody">
+                        {% if template and template.partA %}
+                            {% for question in template.partA %}
+                                <tr>
+                                    <td>{{ question.qno }}</td>
+                                    <td>{{ question.sub_qno }}</td>
+                                    <td>
+                                        <select class="form-select" required onchange="updateQuestion('partA', {{ loop.index0 }}, 'unit', this.value)">
+                                            <option value="">Select Unit</option>
+                                            {% for i in range(1, 6) %}
+                                                <option value="{{ i }}" {% if question.unit == i %}selected{% endif %}>Unit {{ i }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </td>
+                                    <td><input type="number" class="form-control" value="2" readonly style="width: 80px;"></td>
+                                    <td class="co-display"></td>
+                                    <td class="bl-display"></td>
+                                    <td>
+                                        <button type="button" class="btn btn-danger btn-sm" onclick="removeQuestionRow('partA', this)">Remove</button>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Part B Questions -->
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h3>Part B</h3>
+                <div>
+                    <input type="number" id="marksPerQuestion" class="form-control d-inline-block me-2" style="width: 100px;" 
+                           placeholder="Marks/Q" value="{{ template.partB[0].marks if template and template.partB else 10 }}" onchange="updatePartBMarks(this.value)">
+                    <button type="button" class="btn btn-primary" onclick="addPartBQuestion()">Add Question Pair</button>
+                </div>
+            </div>
+            <div class="card-body">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Q.No</th>
+                            <th>Unit</th>
+                            <th>Marks</th>
+                            <th>CO</th>
+                            <th>BL</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="partBBody">
+                        {% if template and template.partB %}
+                            {% for question in template.partB %}
+                                {% if loop.index0 % 2 == 0 %}
+                                <tr>
+                                    <td>{{ question.qno }}</td>
+                                    <td>
+                                        <select class="form-select unit-select" required onchange="syncUnitSelection(this, {{ question.qno }})">
+                                            <option value="">Select Unit</option>
+                                            {% for i in range(1, 6) %}
+                                                <option value="{{ i }}" {% if question.unit == i %}selected{% endif %}>Unit {{ i }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </td>
+                                    <td><input type="number" class="form-control marks-input" value="{{ question.marks }}" readonly style="width: 60px;"></td>
+                                    <td class="co-display"></td>
+                                    <td class="bl-display"></td>
+                                    <td>
+                                        <button type="button" class="btn btn-danger btn-sm" onclick="removePartBQuestionSet(this)">Remove</button>
+                                    </td>
+                                </tr>
+                                <tr class="table-secondary text-center">
+                                    <td colspan="6"><strong>OR</strong></td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td>{{ question.qno }}</td>
+                                    <td>
+                                        <select class="form-select unit-select" required>
+                                            <option value="">Select Unit</option>
+                                            {% for i in range(1, 6) %}
+                                                <option value="{{ i }}" {% if question.unit == i %}selected{% endif %}>Unit {{ i }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </td>
+                                    <td><input type="number" class="form-control marks-input" value="{{ question.marks }}" readonly style="width: 60px;"></td>
+                                    <td class="co-display"></td>
+                                    <td class="bl-display"></td>
+                                    <td></td>
+                                </tr>
+                                {% endif %}
+                            {% endfor %}
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <input type="hidden" id="partAData" name="partA" value='{{ template.partA|tojson|safe if template else "[]" }}'>
+        <input type="hidden" id="partBData" name="partB" value='{{ template.partB|tojson|safe if template else "[]" }}'>
+
+        <div class="text-end">
+            <button type="submit" class="btn btn-success">Update Template</button>
+        </div>
+    </form>
+</div>
+
+<script src="/static/js/main.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize existing data
+    if (document.getElementById('partAData').value) {
+        partAQuestions = JSON.parse(document.getElementById('partAData').value);
+    }
+    if (document.getElementById('partBData').value) {
+        partBQuestions = JSON.parse(document.getElementById('partBData').value);
+    }
+    updateQuestionsData();
+});
+</script>
+{% endblock %}

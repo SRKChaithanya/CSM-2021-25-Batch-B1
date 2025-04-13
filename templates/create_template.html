@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <h2>{% if template %}Edit{% else %}Create{% endif %} Template</h2>
+    <form method="POST" id="templateForm">
+        <!-- Header Information -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h3>Header Information</h3>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Institution Name</label>
+                        <input type="text" class="form-control" name="institution" value="SRINIVASA RAMANUJAN INSTITUTE OF TECHNOLOGY" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Autonomous Status</label>
+                        <input type="text" class="form-control" name="autonomous" value="AUTONOMOUS" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Exam Type</label>
+                        <input type="text" class="form-control" value="{{ exam_type }}" readonly>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Time (in hours)</label>
+                        <input type="number" class="form-control" name="time_hours" value="{{ template.header.time_hours if template else '' }}" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Maximum Marks</label>
+                        <input type="number" class="form-control" name="max_marks" value="{{ template.header.max_marks if template else '' }}" required>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Part A Questions -->
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h3>Part A</h3>
+                <button type="button" class="btn btn-primary" onclick="addQuestionRow('partA')">Add Question</button>
+            </div>
+            <div class="card-body">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Q.No</th>
+                            <th></th>
+                            <th>Unit</th>
+                            <th>Marks</th>
+                            <th>CO</th>
+                            <th>BL</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="partABody">
+                        {% if template and template.partA %}
+                            {% for question in template.partA %}
+                                <tr>
+                                    <td>1</td>
+                                    <td>{{ loop.index0 | char }}</td>
+                                    <td>
+                                        <select class="form-select" name="partA_unit_{{ loop.index }}" required>
+                                            <option value="">Select Unit</option>
+                                            {% for i in range(1, 6) %}
+                                                <option value="{{ i }}" {% if question.unit == i %}selected{% endif %}>Unit {{ i }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </td>
+                                    <td><input type="number" class="form-control" value="2" readonly style="width: 80px;"></td>
+                                    <td class="co-display"></td>
+                                    <td class="bl-display"></td>
+                                    <td>
+                                        <button type="button" class="btn btn-danger btn-sm" onclick="removeQuestionRow('partA', this)">Remove</button>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Part B Questions -->
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h3>Part B</h3>
+                <div>
+                    <input type="number" id="marksPerQuestion" class="form-control d-inline-block me-2" style="width: 100px;" 
+                           placeholder="Marks/Q" value="10" onchange="updatePartBMarks(this.value)">
+                    <button type="button" class="btn btn-primary" onclick="addQuestionRow('partB')">Add Question</button>
+                </div>
+            </div>
+            <div class="card-body">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Q.No</th>
+                            <th>Unit</th>
+                            <th>Marks</th>
+                            <th>CO</th>
+                            <th>BL</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="partBBody">
+                        {% if template and template.partB %}
+                            {% for question in template.partB %}
+                                <tr>
+                                    <td>{{ loop.index + 1 }}</td>
+                                    <td>
+                                        <select class="form-select unit-select" onchange="syncUnitSelection(this, {{ loop.index + 1 }})" required>
+                                            <option value="">Select Unit</option>
+                                            {% for i in range(1, 6) %}
+                                                <option value="{{ i }}" {% if question.unit == i %}selected{% endif %}>Unit {{ i }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </td>
+                                    <td><input type="number" class="form-control marks-input" value="{{ question.marks }}" readonly style="width: 60px;"></td>
+                                    <td class="co-display"></td>
+                                    <td class="bl-display"></td>
+                                    <td>
+                                        <button type="button" class="btn btn-danger btn-sm" onclick="removePartBQuestionSet(this)">Remove</button>
+                                    </td>
+                                </tr>
+                                <tr class="table-secondary text-center">
+                                    <td colspan="6"><strong>OR</strong></td>
+                                </tr>
+                                <tr>
+                                    <td>{{ loop.index + 1 }}</td>
+                                    <td>
+                                        <select class="form-select unit-select" required>
+                                            <option value="">Select Unit</option>
+                                            {% for i in range(1, 6) %}
+                                                <option value="{{ i }}" {% if question.unit == i %}selected{% endif %}>Unit {{ i }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </td>
+                                    <td><input type="number" class="form-control marks-input" value="{{ question.marks }}" readonly style="width: 60px;"></td>
+                                    <td class="co-display"></td>
+                                    <td class="bl-display"></td>
+                                    <td></td>
+                                </tr>
+                            {% endfor %}
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <input type="hidden" id="partAData" name="partA" value="{{ template.partA|tojson if template else '[]' }}">
+        <input type="hidden" id="partBData" name="partB" value="{{ template.partB|tojson if template else '[]' }}">
+
+        <div class="text-end">
+            <button type="submit" class="btn btn-success">Save Template</button>
+        </div>
+    </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize existing data
+    if (document.getElementById('partAData').value) {
+        partAQuestions = JSON.parse(document.getElementById('partAData').value);
+    }
+    if (document.getElementById('partBData').value) {
+        partBQuestions = JSON.parse(document.getElementById('partBData').value);
+    }
+});
+</script>
+{% endblock %}

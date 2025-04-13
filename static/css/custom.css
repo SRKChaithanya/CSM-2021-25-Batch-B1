@@ -1,0 +1,346 @@
+/* Global font family */
+body, input, button, select, textarea {
+    font-family: "Times New Roman", Times, serif;
+}
+
+/* A4 paper styling */
+.a4-paper {
+    width: 210mm;
+    min-height: 297mm;
+    padding: 20mm;
+    margin: 10mm auto;
+    background: white;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+@media print {
+    .a4-paper {
+        margin: 0;
+        box-shadow: none;
+    }
+}
+
+/* Theme colors */
+:root {
+    --primary-color: #ff6b00;
+    --primary-hover: #e65c00;
+    --secondary-color: #6c757d;
+    --success-color: #28a745;
+    --info-color: #17a2b8;
+    --warning-color: #ffc107;
+    --danger-color: #dc3545;
+    --light-color: #f8f9fa;
+    --dark-color: #343a40;
+}
+
+.btn-primary {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.btn-primary:hover {
+    background-color: var(--primary-hover);
+    border-color: var(--primary-hover);
+}
+
+.nav-pills .nav-link.active {
+    background-color: var(--primary-color);
+}
+
+/* Sidebar styling */
+.sidebar {
+    border-right: 1px solid #dee2e6;
+    box-shadow: 1px 0 5px rgba(0, 0, 0, 0.05);
+}
+
+.sidebar .nav-link {
+    border-radius: 0.25rem;
+    margin-bottom: 0.2rem;
+    padding: 0.5rem 1rem;
+}
+
+.sidebar .nav-link:hover {
+    background-color: rgba(255, 107, 0, 0.05);
+}
+
+.sidebar .nav-link.active {
+    background-color: rgba(255, 107, 0, 0.15);
+    color: var(--primary-color) !important;
+    font-weight: 500;
+}
+
+/* Dashboard styling */
+.dashboard-container .card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.dashboard-container .card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1) !important;
+}
+
+.icon-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+}
+
+/* Chart container styling */
+.chart-container {
+    background-color: white;
+    border-radius: 0.375rem;
+    padding: 1rem;
+    position: relative;
+    transition: opacity 0.3s ease;
+}
+
+.chart-container.loading::after {
+    content: "Loading...";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(255, 255, 255, 0.8);
+    padding: 0.5rem 1rem;
+    border-radius: 0.25rem;
+    font-weight: bold;
+    z-index: 10;
+}
+
+/* Filter styling */
+.form-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.25rem rgba(255, 107, 0, 0.25);
+}
+
+/* Template specific styles */
+.template-page {
+    font-size: 12pt;
+    line-height: 1.5;
+}
+
+.template-header {
+    text-align: center;
+    margin-bottom: 2em;
+}
+
+.question-section {
+    margin: 1em 0;
+}
+
+/* Question Paper Styles */
+.a4-paper {
+    background: white;
+    padding: 20px;
+    margin-bottom: 30px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+.header {
+    border-bottom: 2px solid #000;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    font-family: "Times New Roman", Times, serif;
+}
+
+.institution {
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.department {
+    font-size: 1.2em;
+    font-weight: 500;
+}
+
+.exam-type {
+    font-size: 1.1em;
+    font-weight: 500;
+}
+
+.details {
+    margin-top: 15px;
+    font-size: 0.95em;
+}
+
+.section-a, .section-b {
+    margin-bottom: 30px;
+}
+
+.section-a h5, .section-b h5 {
+    font-weight: bold;
+    margin-bottom: 15px;
+}
+
+.table {
+    margin-bottom: 0;
+}
+
+.table th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+}
+
+.co-display, .bl-display {
+    font-size: 0.85em;
+    color: #666;
+}
+
+/* Split question button styling */
+.split-button {
+    padding: 0 4px;
+    margin-left: 5px;
+    color: #0d6efd;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.split-button:hover {
+    color: #0a58ca;
+    background-color: #f8f9fa;
+    border-radius: 3px;
+}
+
+.marks-input {
+    padding: 2px 5px;
+    text-align: center;
+}
+
+/* Sub-question label styles */
+.sub-question-label {
+    font-family: "Times New Roman", Times, serif;
+}
+
+/* Make text inputs use Times New Roman */
+input.form-control, select.form-select {
+    font-family: "Times New Roman", Times, serif;
+}
+
+/* Preview modal styles */
+#previewContent {
+    font-family: "Times New Roman", Times, serif;
+}
+
+#previewContent .header {
+    font-weight: bold;
+}
+
+/* Add your custom styles here */
+.split-question {
+    padding: 0 4px;
+    margin-left: 5px;
+    color: #0d6efd;
+    text-decoration: none;
+}
+
+.split-question:hover {
+    color: #0a58ca;
+    background-color: #f8f9fa;
+    border-radius: 3px;
+}
+
+/* Question image styles */
+.question-image {
+    max-width: 400px;
+    margin: 15px auto;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    resize: both; /* Allow both width and height resizing */
+    overflow: auto; /* Required for resize to work */
+    height: auto;
+    min-width: 100px; /* Prevent resizing smaller than this */
+    min-height: 50px;
+    display: block; /* Required for proper centering */
+}
+
+/* Resizable image container */
+.question-image-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 15px auto;
+    width: 100%;
+    text-align: center;
+    padding: 5px;
+    position: relative; /* For resize indicator */
+}
+
+/* Hover effect to indicate resizability */
+.question-image:hover {
+    cursor: se-resize; /* Show resize cursor on hover */
+    border: 1px dashed #007bff; /* Highlight border when hovering */
+}
+
+/* Add a resize indicator in the bottom right corner */
+.question-image-container::after {
+    content: "";
+    position: absolute;
+    bottom: 5px;
+    right: 5px;
+    width: 10px;
+    height: 10px;
+    border-right: 2px solid #007bff;
+    border-bottom: 2px solid #007bff;
+    opacity: 0;
+    transition: opacity 0.2s;
+    z-index: 10;
+    pointer-events: none;
+}
+
+.question-image-container:hover::after {
+    opacity: 1;
+}
+
+/* PDF display - center align images */
+.pdf-question-image {
+    display: block;
+    margin: 15px auto; /* Center align in PDF */
+    max-width: 90%; /* Allow some margin on sides */
+}
+
+/* Ensure proper image centering in PDFs */
+.question-image {
+    max-width: 90%;
+    text-align: center;
+    margin: 15px auto;
+}
+
+.question-container {
+    margin-bottom: 15px;
+}
+
+.question-text {
+    margin-bottom: 10px;
+}
+
+/* Question bank table styles */
+.question-bank-table td {
+    vertical-align: top;
+}
+
+.question-bank-table .image-cell {
+    text-align: center;
+}
+
+/* Preview styles */
+.preview-question-image {
+    max-width: 300px;
+    margin: 10px 0;
+}
+
+/* Institute Header Styling */
+.institute-header {
+    max-width: 100%;
+    margin: 0 auto 20px;
+    border-bottom: 2px solid #ff6b00;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.institute-header img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+}

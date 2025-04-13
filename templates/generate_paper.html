@@ -1,0 +1,1051 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <div class="card">
+            <div class="card-header">
+                <h2 class="mb-0">Generate Question Paper</h2>
+                <button type="button" class="btn btn-secondary" onclick="autoSelectQuestions()">Automated Selection</button>
+            </div>
+            <div class="card-body">
+                {% if template %}
+                <form method="POST" id="questionForm">
+                    <div class="a4-paper mb-4">
+                        <div class="header text-center mb-4">
+                            <h4 class="institution fw-bold">{{ template.header.institution }}</h4>
+                            <div class="exam-type fw-bold mb-2">{{ template.exam_type }}</div>
+                            <!-- Header Dropdowns -->
+                            <div class="row mb-3">
+                                <div class="col-md-4">
+                                    <div class="input-group">
+                                        <div class="dropdown" style="margin-right: 5px;">
+                                            <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="departmentDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                                Departments
+                                            </button>
+                                            <ul class="dropdown-menu" aria-labelledby="departmentDropdown">
+                                                {% for dept in related_departments %}
+                                                <li>
+                                                    <div class="form-check ms-2 me-2">
+                                                        <input class="form-check-input" type="checkbox" name="selected_departments" value="{{ dept.dept_id }}" id="dept{{ loop.index }}" checked>
+                                                        <label class="form-check-label" for="dept{{ loop.index }}">
+                                                            {{ dept.dept_id }}
+                                                        </label>
+                                                    </div>
+                                                </li>
+                                                {% endfor %}
+                                            </ul>
+                                        </div>
+                                        <select id="paperType" name="paper_type" class="form-select">
+                                            <option value="Regular">Regular</option>
+                                            <option value="Supplementary">Supplementary</option>
+                                            <option value="Regular/Supplementary">Regular/Supplementary</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <select id="examMonth" name="exam_month" class="form-select">
+                                        <option value="January">January</option>
+                                        <option value="February">February</option>
+                                        <option value="March">March</option>
+                                        <option value="April">April</option>
+                                        <option value="May">May</option>
+                                        <option value="June">June</option>
+                                        <option value="July">July</option>
+                                        <option value="August">August</option>
+                                        <option value="September">September</option>
+                                        <option value="October">October</option>
+                                        <option value="November">November</option>
+                                        <option value="December">December</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <select id="examYear" name="exam_year" class="form-select">
+                                        {% set current_year = 2025 %}
+                                        {% for year in range(current_year, current_year + 4) %}
+                                        <option value="{{ year }}">{{ year }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="row details fw-bold">
+                                <div class="col-md-6 text-start">
+                                    <div>Subject: {{ subject.course_name }} ({{ subject.course_code }})</div>
+                                    <div>Year: {% if subject.year %} {{ subject.year  }} {% endif %} Semester: {% if subject.semester %} {{ subject.semester  }} {% endif %}</div>
+                                </div>
+                                <div class="col-md-6 text-end">
+                                    <div>Time: {{ template.header.time_hours }} Hours</div>
+                                    <div>Max Marks: {{ template.header.max_marks }}</div>
+                                </div>
+                            </div>
+                            <hr>
+                        </div>
+
+                        <!-- PART-A Section -->
+                        <div class="section-a mb-4">
+                            <h3 class="text-center">PART-A</h3>
+                            <p class="text-center">(Answer the following, {{ template.partA|length }} X {{ template.partA[0].marks if template.partA else 2 }} = {{ (template.partA|length * (template.partA[0].marks if template.partA else 2)) }} Marks)</p>
+                            <table class="table table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>Q.No</th>
+                                        <th></th>
+                                        <th>Question</th>
+                                        <th>Marks</th>
+                                        <th>CO</th>
+                                        <th>BL</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                {% for q in template.partA %}
+                                    <tr>
+                                        <td>{% if loop.first %}1{% endif %}</td>
+                                        <td class="sub-question-label">{{ q.sub_qno }}</td>
+                                        <td>
+                                            <select class="form-select question-select" name="partA_{{ q.qno }}_{{ q.sub_qno|default('a') }}" required data-unit="{{ q.unit }}" data-part="A" onchange="validateSelection(this)">
+                                                <option value="">Select Question</option>
+                                            </select>
+                                            {% if q.image_data %}
+                                            <div class="question-image-container mt-2">
+                                                <img src="data:image/png;base64,{{ q.image_data }}" 
+                                                     alt="Question image" 
+                                                     class="img-fluid question-image"
+                                                     style="max-width: 300px;">
+                                            </div>
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-center">2M</td>
+                                        <td class="co-display text-center"></td>
+                                        <td class="bl-display text-center"></td>
+                                    </tr>
+                                {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- PART-B Section -->
+                        <div class="section-b">
+                            <h3 class="text-center">PART-B</h3>
+                            <p class="text-center">(Answer the following, {{ (template.partB|length / 2)|int }} X {{ template.partB[0].marks if template.partB else 8 }} = {{ ((template.partB|length / 2)|int) * (template.partB[0].marks if template.partB else 8) }} Marks)</p>
+                            <table class="table table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>Q.No</th>
+                                        <th></th>
+                                        <th>Question</th>
+                                        <th>Marks</th>
+                                        <th>CO</th>
+                                        <th>BL</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                {% set qno = namespace(value=1) %}
+                                {% for q in template.partB %}
+                                        {% set qno.value = qno.value + 1 %}
+                                    {% if loop.index % 2 == 1 or loop.first %}
+                                            <tr class="unit-header">
+                                                <td colspan="6">
+                                                    <h6 class="text-center mt-3 mb-2">UNIT-{{ q.unit }}</h6>
+                                                </td>
+                                            </tr>
+                                    {% endif %}
+
+                                    <tr class="question-row" data-original-marks="{{ q.marks if q.marks else 10 }}">
+                                        <td style="white-space: nowrap;">
+
+                                                {{ qno.value }}
+
+                                            <button type="button" class="btn btn-sm btn-link split-button p-0 ms-1" onclick="toggleSplit(this)">+</button>
+                                        </td>
+                                        <td class="sub-question-label"></td>
+                                        <td>
+                                            <select class="form-select question-select" name="partB_{{ q.qno }}" required data-unit="{{ q.unit }}" data-part="B" onchange="validateSelection(this)">
+                                                <option value="">Select Question</option>
+                                            </select>
+                                            {% if q.image_data %}
+                                            <div class="question-image-container mt-2">
+                                                <img src="data:image/png;base64,{{ q.image_data }}" 
+                                                     alt="Question image" 
+                                                     class="img-fluid question-image"
+                                                     style="max-width: 300px;">
+                                            </div>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <input type="number" class="form-control marks-input" name="marks_{{ q.qno }}" value="{{ q.marks if q.marks else 10 }}" min="1">
+                                        </td>
+                                        <td class="co-display text-center"></td>
+                                        <td class="bl-display text-center"></td>
+                                    </tr>
+                                    <tr class="sub-question-row d-none">
+                                        <td></td>
+                                        <td class="sub-question-label"></td>
+                                        <td>
+                                            <select class="form-select question-select" name="partB_{{ q.qno }}_sub" data-unit="{{ q.unit }}" data-part="B" onchange="validateSelection(this)" disabled>
+                                                <option value="">Select Question</option>
+                                            </select>
+                                            {% if q.image_data %}
+                                            <div class="question-image-container mt-2">
+                                                <img src="data:image/png;base64,{{ q.image_data }}" 
+                                                     alt="Question image" 
+                                                     class="img-fluid question-image"
+                                                     style="max-width: 300px;">
+                                            </div>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <input type="number" class="form-control marks-input" name="marks_{{ q.qno }}_sub" disabled>
+                                        </td>
+                                        <td class="co-display text-center"></td>
+                                        <td class="bl-display text-center"></td>
+                                    </tr>
+
+                            {% if loop.index % 2 == 1 and not loop.last %}
+                                    <tr>
+                                        <td colspan="6" class="text-center">OR</td>
+                                    </tr>
+                            {% endif %}
+                                {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <div class="btn-group">
+                            <button type="submit" class="btn btn-success">Generate PDF</button>
+                            <button type="button" class="btn btn-primary" onclick="previewPaper()">Preview</button>
+                        </div>
+                    </div>
+                </form>
+                {% else %}
+                <div class="alert alert-warning">
+                    No template found for this exam type.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Initialize global variables that will be used by main.js
+let questionBank = {};
+let selectedQuestions = new Set();
+
+// Add the subject code as a hidden field that main.js will use
+document.addEventListener('DOMContentLoaded', function() {
+    // Create subject code hidden input
+    const form = document.getElementById('questionForm');
+    if (form) {
+        const subjectCodeInput = document.createElement('input');
+        subjectCodeInput.type = 'hidden';
+        subjectCodeInput.id = 'subject-code';
+        subjectCodeInput.value = '{{ subject.course_code }}';
+        form.appendChild(subjectCodeInput);
+    }
+});
+
+// Declare validateSelection function that will be used from HTML
+function validateSelection(selectElement) {
+    // Find if the select has already been selected elsewhere
+    const selectedValue = selectElement.value;
+    if (!selectedValue) return;
+    
+    // Check for duplicate selection
+    const otherSelects = Array.from(document.querySelectorAll('.question-select')).filter(s => s !== selectElement);
+    const isDuplicate = otherSelects.some(s => s.value === selectedValue);
+    
+    if (isDuplicate) {
+        alert('This question has already been selected. Please choose a different question.');
+        selectElement.value = '';
+        return;
+    }
+    
+    // Update CO/BL displays
+    const selectedOption = selectElement.options[selectElement.selectedIndex];
+    const row = selectElement.closest('tr');
+    const coDisplay = row.querySelector('.co-display');
+    const blDisplay = row.querySelector('.bl-display');
+    
+    if (selectedOption) {
+        coDisplay.textContent = selectedOption.dataset.co;
+        blDisplay.textContent = selectedOption.dataset.bl;
+        
+        // Display image if available
+        if (selectedOption.dataset.image) {
+            // Handle image display via the main.js function that ensures
+            // resizable images with proper styling
+            const container = selectElement.closest('td');
+            const existingContainer = container.querySelector('.question-image-container');
+            if (existingContainer) {
+                existingContainer.remove();
+            }
+            
+            // Create image container
+            const imageContainer = document.createElement('div');
+            imageContainer.className = 'question-image-container mt-2';
+            
+            // Create image element
+            const img = document.createElement('img');
+            img.src = `data:image/png;base64,${selectedOption.dataset.image}`;
+            img.className = 'img-fluid question-image';
+            img.alt = 'Question image';
+            img.style.maxWidth = '300px';
+            
+            // Add resizing capabilities
+            img.dataset.originalWidth = img.naturalWidth;
+            img.dataset.originalHeight = img.naturalHeight;
+            
+            // Store resize information
+            img.addEventListener('mouseup', function() {
+                this.dataset.resizedWidth = this.width;
+                this.dataset.resizedHeight = this.height;
+                console.log(`Image resized to: ${this.width}x${this.height}`);
+                
+                // Create or update hidden input fields with resize dimensions
+                const questionId = selectedOption.value;
+                let widthInput = document.getElementById(`image_width_${questionId}`);
+                let heightInput = document.getElementById(`image_height_${questionId}`);
+                
+                if (!widthInput) {
+                    widthInput = document.createElement('input');
+                    widthInput.type = 'hidden';
+                    widthInput.id = `image_width_${questionId}`;
+                    widthInput.name = `image_width_${questionId}`;
+                    document.getElementById('questionForm').appendChild(widthInput);
+                }
+                
+                if (!heightInput) {
+                    heightInput = document.createElement('input');
+                    heightInput.type = 'hidden';
+                    heightInput.id = `image_height_${questionId}`;
+                    heightInput.name = `image_height_${questionId}`;
+                    document.getElementById('questionForm').appendChild(heightInput);
+                }
+                
+                widthInput.value = this.width;
+                heightInput.value = this.height;
+            });
+            
+            imageContainer.appendChild(img);
+            container.appendChild(imageContainer);
+        }
+    } else {
+        coDisplay.textContent = '';
+        blDisplay.textContent = '';
+    }
+}
+
+// Add the subject code as a hidden field that main.js will use
+document.addEventListener('DOMContentLoaded', function() {
+    // Create subject code hidden input
+    const form = document.getElementById('questionForm');
+    if (form) {
+        const subjectCodeInput = document.createElement('input');
+        subjectCodeInput.type = 'hidden';
+        subjectCodeInput.id = 'subject-code';
+        subjectCodeInput.value = '{{ subject.course_code }}';
+        form.appendChild(subjectCodeInput);
+    }
+
+    // Function to filter and populate questions based on marks
+    function filterAndPopulateQuestions(select) {
+        const unit = select.dataset.unit;
+        const part = select.dataset.part;
+        const row = select.closest('tr');
+
+        // Determine if this is a split question by checking either:
+        // 1. The dataset attribute we added in toggleSplit
+        // 2. The row class or the split button text (for backward compatibility)
+        const isSplitQuestion = select.dataset.splitQuestion === 'true' || 
+                               row.classList.contains('sub-question-row') || 
+                               (row.classList.contains('question-row') && 
+                                row.querySelector('.split-button')?.textContent === '-');
+
+        // Clear existing options except the default one
+        while (select.options.length > 1) {
+            select.remove(1);
+        }
+
+        if (!questionBank[unit]) {
+            // Fetch questions if we don't have them cached
+            fetch(`/get_questions/${unit}/${subjectCode}`)
+                .then(response => response.json())
+                .then(questions => {
+                    // Store all questions in the bank
+                    questionBank[unit] = questions;
+
+                    // Filter based on part and marks
+                    const filteredQuestions = questionBank[unit].filter(q => {
+                        if (part === 'A') return q.marks === 2;  // Short Answer Questions
+
+                        // For Part B questions
+                        const row = select.closest('tr');
+                        const splitButtonText = row.querySelector('.split-button')?.textContent || '';
+                        const isMainQuestionRow = row.classList.contains('question-row');
+                        const isSubQuestionRow = row.classList.contains('sub-question-row');
+                        const isSplitQuestion = (isMainQuestionRow && splitButtonText === '-') || isSubQuestionRow;
+
+                        // Always return 5 mark questions for both a) and b) parts when split
+                        if (isSplitQuestion) {
+                            return q.marks === 5;
+                        } else if (!isSplitQuestion && isMainQuestionRow && splitButtonText === '+') {
+                            return q.marks === 10;  // Full questions are 10 marks
+                        }
+                    });
+
+                    // Add options to select
+                    filteredQuestions.forEach(q => {
+                        const option = document.createElement('option');
+                        option.value = q.id;
+                        option.textContent = q.question_text;
+                        if (q.image_data) {
+                            option.setAttribute('data-image', q.image_data);
+                        }
+                        option.dataset.co = q.co;
+                        option.dataset.bl = q.bl;
+                        option.dataset.marks = q.marks;
+                        select.appendChild(option);
+                    });
+                })
+                .catch(error => console.error('Error loading questions:', error));
+        } else {
+            // Filter existing questions
+            const filteredQuestions = questionBank[unit].filter(q => {
+                if (part === 'A') return q.marks === 2;  // Short Answer Questions
+
+                // For Part B questions
+                const row = select.closest('tr');
+                const splitButtonText = row.querySelector('.split-button')?.textContent;
+                const isMainQuestionRow = row.classList.contains('question-row');
+                const isSubQuestionRow = row.classList.contains('sub-question-row');
+                const isSplitQuestion = (isMainQuestionRow && splitButtonText === '-') || isSubQuestionRow;
+
+                if (isSplitQuestion) {
+                    return q.marks === 5;  // Both a) and b) should be 5 marks
+                } else if (!isSplitQuestion && isMainQuestionRow) {
+                    return q.marks === 10;  // Full questions are 10 marks
+                }
+            });
+
+            // Add options to select
+            filteredQuestions.forEach(q => {
+                const option = document.createElement('option');
+                option.value = q.id;
+                option.textContent = q.question_text;
+                if (q.image_data) {
+                    option.setAttribute('data-image', q.image_data);
+                }
+                option.dataset.co = q.co;
+                option.dataset.bl = q.bl;
+                option.dataset.marks = q.marks;
+                select.appendChild(option);
+            });
+        }
+    }
+
+    // Apply filter to all selects
+    questionSelects.forEach(select => {
+        filterAndPopulateQuestions(select);
+    });
+});
+
+function updateQuestionLabels() {
+    // Update Part A sub-question labels
+    document.querySelectorAll('.section-a tbody tr').forEach((row, index) => {
+        const label = row.querySelector('.sub-question-label');
+        label.textContent = String.fromCharCode(97 + index) + ')';
+    });
+
+    // Update Part B labels for split questions
+    document.querySelectorAll('.section-b .question-row').forEach((row,index) => {
+        const splitButton = row.querySelector('.split-button');
+        if (splitButton.textContent === '-') {
+            const subQuestionRow = row.nextElementSibling;
+            row.querySelector('.sub-question-label').textContent = 'a)';
+            subQuestionRow.querySelector('.sub-question-label').textContent = 'b)';
+        } else {
+            row.querySelector('.sub-question-label').textContent = '';
+        }
+    });
+}
+
+function toggleSplit(button) {
+    const questionRow = button.closest('.question-row');
+    const subQuestionRow = questionRow.nextElementSibling;
+    const marksInput = questionRow.querySelector('.marks-input');
+    const mainSelect = questionRow.querySelector('.question-select');
+    const subSelect = subQuestionRow.querySelector('.question-select');
+    const subMarksInput = subQuestionRow.querySelector('.marks-input');
+    const originalMarks = parseInt(questionRow.getAttribute('data-original-marks')) || 10;
+
+    // Clear current selections
+    const mainCoDisplay = questionRow.querySelector('.co-display');
+    const mainBlDisplay = questionRow.querySelector('.bl-display');
+    const subCoDisplay = subQuestionRow.querySelector('.co-display');
+    const subBlDisplay = subQuestionRow.querySelector('.bl-display');
+
+    // Clear images if any
+    const mainImageContainer = questionRow.querySelector('.question-image-container');
+    if (mainImageContainer) mainImageContainer.remove();
+
+    const subImageContainer = subQuestionRow.querySelector('.question-image-container');
+    if (subImageContainer) subImageContainer.remove();
+
+    if (button.textContent === '+') {
+        // Split the question
+        button.textContent = '-';
+        subQuestionRow.classList.remove('d-none');
+        subSelect.disabled = false;
+        subMarksInput.disabled = false;
+
+        // Split the marks
+        const halfMarks = Math.floor(originalMarks / 2);
+        marksInput.value = halfMarks;
+        subMarksInput.value = halfMarks;
+
+        // Update labels
+        questionRow.querySelector('.sub-question-label').textContent = 'a)';
+        subQuestionRow.querySelector('.sub-question-label').textContent = 'b)';
+
+        // Clear main selection and repopulate with 5-mark questions
+        if (mainSelect.value) {
+            selectedQuestions.delete(mainSelect.value);
+            mainSelect.value = '';
+            mainCoDisplay.textContent = '';
+            mainBlDisplay.textContent = '';
+        }
+
+        // Set both selects to only show 5-mark questions
+        mainSelect.dataset.splitQuestion = 'true';
+        subSelect.dataset.splitQuestion = 'true';
+
+        // Refresh the question lists with the appropriate mark values
+        filterAndPopulateQuestions(mainSelect);
+        filterAndPopulateQuestions(subSelect);
+    } else {
+        // Merge the questions
+        button.textContent = '+';
+        subQuestionRow.classList.add('d-none');
+        subSelect.disabled = true;
+        subMarksInput.disabled = true;
+
+        // Restore original marks (typically 10)
+        marksInput.value = originalMarks;
+
+        // Clear main selection and repopulate with 10-mark questions
+        if (mainSelect.value) {
+            selectedQuestions.delete(mainSelect.value);
+            mainSelect.value = '';
+            mainCoDisplay.textContent = '';
+            mainBlDisplay.textContent = '';
+        }
+
+        // Clear sub-question selection
+        if (subSelect.value) {
+            selectedQuestions.delete(subSelect.value);
+            subSelect.value = '';
+            subCoDisplay.textContent = '';
+            subBlDisplay.textContent = '';
+        }
+
+        // Update labels
+        questionRow.querySelector('.sub-question-label').textContent = '';
+        subQuestionRow.querySelector('.sub-question-label').textContent = '';
+
+        // Remove split question flag
+        delete mainSelect.dataset.splitQuestion;
+        delete subSelect.dataset.splitQuestion;
+
+        // Refresh the main question list with 10-mark questions
+        filterAndPopulateQuestions(mainSelect);
+    }
+}
+
+function validateSelection(selectElement) {
+    const selectedValue = selectElement.value;
+    const row = selectElement.closest('tr');
+    const coDisplay = row.querySelector('.co-display');
+    const blDisplay = row.querySelector('.bl-display');
+    const unit = selectElement.dataset.unit;
+    const part = selectElement.dataset.part;
+    const name = selectElement.name;
+
+    // Clear existing image if any
+    let existingImage = row.querySelector('.question-image-container');
+    if (existingImage) {
+        existingImage.remove();
+    }
+
+    if (!selectedValue) {
+        coDisplay.textContent = '';
+        blDisplay.textContent = '';
+        return;
+    }
+
+    // Check for duplicate question selection
+    const previousSelections = document.querySelectorAll('.question-select');
+    for (let select of previousSelections) {
+        if (select !== selectElement && select.value === selectedValue) {
+            alert('This question has already been selected. Please choose a different question.');
+            selectElement.value = '';
+            coDisplay.textContent = '';
+            blDisplay.textContent = '';
+            return;
+        }
+    }
+
+    // We no longer need the Part A unit check in manual selection
+    // The template itself can have multiple questions from the same unit by design
+
+    const selectedOption = selectElement.options[selectElement.selectedIndex];
+
+    // Update CO and BL displays
+    coDisplay.textContent = selectedOption.dataset.co;
+    blDisplay.textContent = selectedOption.dataset.bl;
+
+    // Display image if available
+    if (selectedOption.hasAttribute('data-image')) {
+        const imageContainer = document.createElement('div');
+        imageContainer.className = 'question-image-container mt-2';
+        const img = document.createElement('img');
+        img.src = `data:image/png;base64,${selectedOption.getAttribute('data-image')}`;
+        img.alt = 'Question image';
+        img.className = 'img-fluid question-image';
+        img.style.maxWidth = '300px';
+        
+        // Store original dimensions for the resized image to be used in PDF
+        img.dataset.originalWidth = img.naturalWidth;
+        img.dataset.originalHeight = img.naturalHeight;
+        
+        // Listen for the image resize end event
+        img.addEventListener('mouseup', function() {
+            // Update dataset with current size after resize
+            this.dataset.resizedWidth = this.width;
+            this.dataset.resizedHeight = this.height;
+            console.log(`Image resized to: ${this.width}x${this.height}`);
+            
+            // Create or update hidden input fields with resize dimensions
+            const questionId = selectedOption.value;
+            let widthInput = document.getElementById(`image_width_${questionId}`);
+            let heightInput = document.getElementById(`image_height_${questionId}`);
+            
+            if (!widthInput) {
+                widthInput = document.createElement('input');
+                widthInput.type = 'hidden';
+                widthInput.id = `image_width_${questionId}`;
+                widthInput.name = `image_width_${questionId}`;
+                document.getElementById('questionForm').appendChild(widthInput);
+            }
+            
+            if (!heightInput) {
+                heightInput = document.createElement('input');
+                heightInput.type = 'hidden';
+                heightInput.id = `image_height_${questionId}`;
+                heightInput.name = `image_height_${questionId}`;
+                document.getElementById('questionForm').appendChild(heightInput);
+            }
+            
+            widthInput.value = this.width;
+            heightInput.value = this.height;
+        });
+        
+        imageContainer.appendChild(img);
+        selectElement.parentNode.appendChild(imageContainer);
+    }
+
+    // Store the selected value
+    selectedQuestions.add(selectedValue);
+}
+
+function autoSelectQuestions() {
+    // Set flag to indicate automated selection is in progress
+    window.autoSelectionInProgress = true;
+
+    // Clear previous selections
+    selectedQuestions = new Set(); // Reset the set completely
+    document.querySelectorAll('.question-select').forEach(select => {
+        select.value = '';
+        const coDisplay = select.closest('tr').querySelector('.co-display');
+        const blDisplay = select.closest('tr').querySelector('.bl-display');
+        coDisplay.textContent = '';
+        blDisplay.textContent = '';
+
+        // Remove existing images
+        const cell = select.closest('td');
+        const existingImage = cell.querySelector('.question-image-container');
+        if (existingImage) {
+            existingImage.remove();
+        }
+    });
+
+    // Ensure we have all questions loaded before proceeding
+    const allUnits = [...new Set(Array.from(document.querySelectorAll('.question-select')).map(select => select.dataset.unit))];
+    const subjectCode = '{{ subject.course_code }}';
+
+    // First, make sure all question banks are loaded
+    const loadQuestions = async () => {
+        for (const unit of allUnits) {
+            if (!questionBank[unit] || questionBank[unit].length === 0) {
+                try {
+                    const response = await fetch(`/get_questions/${unit}/${subjectCode}`);
+                    if (response.ok) {
+                        const questions = await response.json();
+                        questionBank[unit] = questions;
+                    }
+                } catch (error) {
+                    console.error(`Error loading questions for unit ${unit}:`, error);
+                }
+            }
+        }
+    };
+
+    // Load all question data first, then proceed with selection
+    loadQuestions().then(() => {
+        // Use local question bank data that's already loaded
+        const selects = [...document.querySelectorAll('.question-select:not([disabled])')];
+
+        // Track which selects we've populated and which questions are used
+        const processedSelects = new Set();
+        const selectedIds = new Set();
+
+        // Group selects by part and unit
+        const partASelects = {};
+        const partBSelects = [];
+
+        // Organize selects into groups
+        selects.forEach(select => {
+            const unit = select.dataset.unit;
+            const part = select.dataset.part;
+
+            if (part === 'A') {
+                if (!partASelects[unit]) {
+                    partASelects[unit] = [];
+                }
+                partASelects[unit].push(select);
+            } else {
+                partBSelects.push(select);
+            }
+        });
+
+        // Process all Part A selects first - grouped by unit
+        Object.entries(partASelects).forEach(([unit, unitSelects]) => {
+            if (questionBank[unit] && questionBank[unit].length > 0) {
+                // Find valid Part A questions
+                const availableQuestions = questionBank[unit].filter(q => 
+                    q.marks === 2 && !selectedIds.has(q.id.toString())
+                );
+
+                if (availableQuestions.length > 0) {
+                    // Add fuzzy score
+                    availableQuestions.forEach(q => {
+                        if (!q.hasOwnProperty('fuzzy_score')) {
+                            q.fuzzy_score = 1.0;
+                        }
+                    });
+
+                    // Sort by fuzzy score (higher score = less frequently used)
+                    availableQuestions.sort((a, b) => b.fuzzy_score - a.fuzzy_score);
+
+                    // Process each select in this unit group
+                    unitSelects.forEach(select => {
+                        // Find a question that hasn't been used yet
+                        const unusedQuestions = availableQuestions.filter(q => 
+                            !selectedIds.has(q.id.toString())
+                        );
+
+                        if (unusedQuestions.length > 0) {
+                            // Pick from top half for diversity
+                            const topN = Math.max(1, Math.ceil(unusedQuestions.length * 0.5));
+                            const topQuestions = unusedQuestions.slice(0, topN);
+
+                            // Randomly select one question
+                            const randomIndex = Math.floor(Math.random() * topQuestions.length);
+                            const selectedQuestion = topQuestions[randomIndex];
+
+                            // Set the option
+                            select.value = selectedQuestion.id;
+                            selectedIds.add(selectedQuestion.id.toString());
+                            processedSelects.add(select);
+
+                            // Update CO and BL
+                            const row = select.closest('tr');
+                            const coDisplay = row.querySelector('.co-display');
+                            const blDisplay = row.querySelector('.bl-display');
+                            coDisplay.textContent = selectedQuestion.co;
+                            blDisplay.textContent = selectedQuestion.bl;
+
+                            // Add image if available
+                            if (selectedQuestion.image_data) {
+                                const cell = select.closest('td');
+                                const imageContainer = document.createElement('div');
+                                imageContainer.className = 'question-image-container mt-2';
+
+                                const img = document.createElement('img');
+                                img.src = `data:image/png;base64,${selectedQuestion.image_data}`;
+                                img.alt = 'Question image';
+                                img.className = 'img-fluid question-image';
+                                img.style.maxWidth = '300px';
+                                
+                                // Store original dimensions for the resized image to be used in PDF
+                                img.dataset.originalWidth = img.naturalWidth;
+                                img.dataset.originalHeight = img.naturalHeight;
+                                
+                                // Listen for the image resize end event
+                                img.addEventListener('mouseup', function() {
+                                    // Update dataset with current size after resize
+                                    this.dataset.resizedWidth = this.width;
+                                    this.dataset.resizedHeight = this.height;
+                                    console.log(`Image resized to: ${this.width}x${this.height}`);
+                                    
+                                    // Create or update hidden input fields with resize dimensions
+                                    const questionId = selectedQuestion.id;
+                                    let widthInput = document.getElementById(`image_width_${questionId}`);
+                                    let heightInput = document.getElementById(`image_height_${questionId}`);
+                                    
+                                    if (!widthInput) {
+                                        widthInput = document.createElement('input');
+                                        widthInput.type = 'hidden';
+                                        widthInput.id = `image_width_${questionId}`;
+                                        widthInput.name = `image_width_${questionId}`;
+                                        document.getElementById('questionForm').appendChild(widthInput);
+                                    }
+                                    
+                                    if (!heightInput) {
+                                        heightInput = document.createElement('input');
+                                        heightInput.type = 'hidden';
+                                        heightInput.id = `image_height_${questionId}`;
+                                        heightInput.name = `image_height_${questionId}`;
+                                        document.getElementById('questionForm').appendChild(heightInput);
+                                    }
+                                    
+                                    widthInput.value = this.width;
+                                    heightInput.value = this.height;
+                                });
+                                
+                                imageContainer.appendChild(img);
+                                cell.appendChild(imageContainer);
+                            }
+                        }
+                    });
+                }
+            }
+        });
+
+        // Process all Part B selects
+        partBSelects.forEach(select => {
+            if (processedSelects.has(select)) return;
+
+            const unit = select.dataset.unit;
+            const row = select.closest('tr');
+            const isSplitQuestion = select.dataset.splitQuestion === 'true' ||
+                                   row.classList.contains('sub-question-row') || 
+                                   (row.classList.contains('question-row') && 
+                                    row.querySelector('.split-button')?.textContent === '-');
+
+            if (questionBank[unit] && questionBank[unit].length > 0) {
+                // Filter questions based on marks and split status
+                const availableQuestions = questionBank[unit].filter(q => {
+                    // For Part B: split questions (5 marks) or non-split questions (10 marks)
+                    if (isSplitQuestion) {
+                        return q.marks === 5 && !selectedIds.has(q.id.toString());
+                    } else {
+                        return q.marks === 10 && !selectedIds.has(q.id.toString());
+                    }
+                });
+
+                if (availableQuestions.length > 0) {
+                    availableQuestions.forEach(q => {
+                        if (!q.hasOwnProperty('fuzzy_score')) {
+                            q.fuzzy_score = 1.0;
+                        }
+                    });
+
+                    // Sort by fuzzy score
+                    availableQuestions.sort((a, b) => b.fuzzy_score - a.fuzzy_score);
+
+                    // Select from top half for diversity
+                    const topN = Math.max(1, Math.ceil(availableQuestions.length * 0.5));
+                    const topQuestions = availableQuestions.slice(0, topN);
+
+                    // Randomly select one question
+                    const randomIndex = Math.floor(Math.random() * topQuestions.length);
+                    const selectedQuestion = topQuestions[randomIndex];
+
+                    // Set the option
+                    select.value = selectedQuestion.id;
+                    selectedIds.add(selectedQuestion.id.toString());
+
+                    // Update CO and BL
+                    const coDisplay = row.querySelector('.co-display');
+                    const blDisplay = row.querySelector('.bl-display');
+                    coDisplay.textContent = selectedQuestion.co;
+                    blDisplay.textContent = selectedQuestion.bl;
+
+                    // Add image if available
+                    if (selectedQuestion.image_data) {
+                        const cell = select.closest('td');
+                        const imageContainer = document.createElement('div');
+                        imageContainer.className = 'question-image-container mt-2';
+
+                        const img = document.createElement('img');
+                        img.src = `data:image/png;base64,${selectedQuestion.image_data}`;
+                        img.alt = 'Question image';
+                        img.className = 'img-fluid question-image';
+                        img.style.maxWidth = '300px';
+                        
+                        // Store original dimensions for the resized image to be used in PDF
+                        img.dataset.originalWidth = img.naturalWidth;
+                        img.dataset.originalHeight = img.naturalHeight;
+                        
+                        // Listen for the image resize end event
+                        img.addEventListener('mouseup', function() {
+                            // Update dataset with current size after resize
+                            this.dataset.resizedWidth = this.width;
+                            this.dataset.resizedHeight = this.height;
+                            console.log(`Image resized to: ${this.width}x${this.height}`);
+                            
+                            // Create or update hidden input fields with resize dimensions
+                            const questionId = selectedQuestion.id;
+                            let widthInput = document.getElementById(`image_width_${questionId}`);
+                            let heightInput = document.getElementById(`image_height_${questionId}`);
+                            
+                            if (!widthInput) {
+                                widthInput = document.createElement('input');
+                                widthInput.type = 'hidden';
+                                widthInput.id = `image_width_${questionId}`;
+                                widthInput.name = `image_width_${questionId}`;
+                                document.getElementById('questionForm').appendChild(widthInput);
+                            }
+                            
+                            if (!heightInput) {
+                                heightInput = document.createElement('input');
+                                heightInput.type = 'hidden';
+                                heightInput.id = `image_height_${questionId}`;
+                                heightInput.name = `image_height_${questionId}`;
+                                document.getElementById('questionForm').appendChild(heightInput);
+                            }
+                            
+                            widthInput.value = this.width;
+                            heightInput.value = this.height;
+                        });
+                        
+                        imageContainer.appendChild(img);
+                        cell.appendChild(imageContainer);
+                    }
+                } else {
+                    console.log(`No available ${isSplitQuestion ? '5' : '10'} mark questions for unit ${unit}`);
+                }
+            }
+        });
+
+        console.log('Automated question selection complete');
+
+        // Save the selections automatically after making them
+        saveSelections();
+
+        // Reset the auto selection flag
+        window.autoSelectionInProgress = false;
+
+        // Notify the user about completion
+        alert('Automatic question selection complete');
+    });
+}
+
+function previewPaper() {
+    const form = document.getElementById('questionForm');
+
+    // Check if autoSelectQuestions has been called
+    const isAutoSelected = document.querySelectorAll('.question-select option:checked[value]').length > 0;
+
+    // Only validate form if not using auto-selection
+    if (!isAutoSelected) {
+        let isValid = true;
+        const requiredSelects = form.querySelectorAll('select:not([disabled])[required]');
+        let missingParts = {
+            'A': 0,
+            'B': 0
+        };
+
+        requiredSelects.forEach(select => {
+            if (!select.value) {
+                isValid = false;
+                missingParts[select.dataset.part]++;
+            }
+        });
+
+        if (!isValid) {
+            let message = 'Please select all required questions before previewing:';
+            if (missingParts['A'] > 0) {
+                message += `\n- ${missingParts['A']} Part A questions missing`;
+            }
+            if (missingParts['B'] > 0) {
+                message += `\n- ${missingParts['B']} Part B questions missing`;
+            }
+            alert(message);
+            return;
+        }
+    }
+
+    // Prepare form data
+    const formData = new FormData(form);
+    formData.append('preview', 'true');
+
+    // Make an AJAX request
+    fetch(form.action, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.blob())
+    .then(blob => {
+        // Create a preview container if it doesn't exist
+        let previewContainer = document.getElementById('pdf-preview-container');
+        if (!previewContainer) {
+            previewContainer = document.createElement('div');
+            previewContainer.id = 'pdf-preview-container';
+            previewContainer.className = 'pdf-preview mt-4';
+            previewContainer.style.width = '100%';
+            previewContainer.style.height = '800px';
+            previewContainer.style.border = '1px solid #ddd';
+            previewContainer.style.position = 'relative';
+
+            // Add a close button
+            const closeButton = document.createElement('button');
+            closeButton.innerHTML = '&times;';
+            closeButton.className = 'btn btn-sm btn-danger position-absolute';
+            closeButton.style.top = '10px';
+            closeButton.style.right = '10px';
+            closeButton.style.zIndex = '1000';
+            closeButton.onclick = function() {
+                previewContainer.style.display = 'none';
+            };
+            previewContainer.appendChild(closeButton);
+
+            // Add the container after the form
+            form.parentNode.appendChild(previewContainer);
+        } else {
+            // Show the container if it exists but is hidden
+            previewContainer.style.display = 'block';
+        }
+
+        // Create PDF object URL and embed it
+        const url = URL.createObjectURL(blob);
+        previewContainer.innerHTML = `
+            <button class="btn btn-sm btn-danger position-absolute" style="top: 10px; right: 10px; z-index: 1000;" 
+                    onclick="document.getElementById('pdf-preview-container').style.display='none'">
+                &times;
+            </button>
+            <iframe src="${url}" width="100%" height="100%" style="border: none;"></iframe>
+        `;
+
+        // Scroll to the preview
+        previewContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    })
+    .catch(error => {
+        console.error('Error generating preview:', error);
+        alert('Error generating preview. Please try again.');
+    });
+}
+</script>
+{% endblock %}

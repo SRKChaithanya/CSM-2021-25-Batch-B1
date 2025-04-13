@@ -1,0 +1,309 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="dashboard-container py-4">
+    <!-- Header -->
+    <h1 class="h3 mb-4">Dashboard</h1>
+    
+    <!-- Stats Overview -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body d-flex align-items-center">
+                    <div class="icon-container me-3 bg-primary bg-opacity-10 p-3 rounded-circle">
+                        <i class="bi bi-building fs-4 text-primary"></i>
+                    </div>
+                    <div>
+                        <h5 class="card-title mb-0">Departments</h5>
+                        <h2 class="mt-2 mb-0">{{ departments_count }}</h2>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body d-flex align-items-center">
+                    <div class="icon-container me-3 bg-success bg-opacity-10 p-3 rounded-circle">
+                        <i class="bi bi-journal-bookmark fs-4 text-success"></i>
+                    </div>
+                    <div>
+                        <h5 class="card-title mb-0">Regulations</h5>
+                        <h2 class="mt-2 mb-0">{{ regulations_count }}</h2>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Quick Actions -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">Quick Actions</h5>
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <div class="d-grid">
+                                <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addRegulationModal">
+                                    <i class="bi bi-plus-circle me-2"></i>Add New Regulation
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-grid">
+                                <a href="{{ url_for('add_department') }}" class="btn btn-outline-primary">
+                                    <i class="bi bi-plus-circle me-2"></i>Add New Department
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Charts and Filters -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title mb-4">Question Paper Analysis</h5>
+                    
+                    <!-- Filters -->
+                    <div class="row mb-4">
+                        <div class="col-md-3 mb-2">
+                            <label for="filter-department" class="form-label">Department</label>
+                            <select id="filter-department" class="form-select">
+                                <option value="all" selected>All Departments</option>
+                                {% for dept in all_departments %}
+                                <option value="{{ dept.dept_id }}">{{ dept.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <label for="filter-regulation" class="form-label">Regulation</label>
+                            <select id="filter-regulation" class="form-select">
+                                <option value="all" selected>All Regulations</option>
+                                {% for reg in all_regulations %}
+                                <option value="{{ reg.id }}">{{ reg.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <label for="filter-exam-type" class="form-label">Exam Type</label>
+                            <select id="filter-exam-type" class="form-select">
+                                <option value="all" selected>All Exam Types</option>
+                                {% for exam_type in exam_types %}
+                                <option value="{{ exam_type }}">{{ exam_type }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <label for="filter-paper-type" class="form-label">Paper Type</label>
+                            <select id="filter-paper-type" class="form-select">
+                                <option value="all" selected>All Paper Types</option>
+                                {% for paper_type in paper_types %}
+                                <option value="{{ paper_type }}">{{ paper_type }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Charts -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="chart-container" style="position: relative; height:300px;">
+                                <canvas id="coDistributionChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="chart-container" style="position: relative; height:300px;">
+                                <canvas id="blDistributionChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Regulation Modal -->
+<div class="modal fade" id="addRegulationModal" tabindex="-1" aria-labelledby="addRegulationModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addRegulationModalLabel">Add New Regulation</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ url_for('add_regulation') }}" method="post">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="regulation-name" class="form-label">Regulation Name</label>
+                        <input type="text" class="form-control" id="regulation-name" name="name" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Regulation</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Include Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<!-- Chart initialization scripts -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // CO Distribution Chart
+        const coCtx = document.getElementById('coDistributionChart').getContext('2d');
+        const coChart = new Chart(coCtx, {
+            type: 'bar',
+            data: {
+                labels: {{ co_labels | tojson }},
+                datasets: [{
+                    label: 'CO Distribution',
+                    data: {{ co_values | tojson }},
+                    backgroundColor: [
+                        'rgba(54, 162, 235, 0.6)',
+                        'rgba(255, 99, 132, 0.6)',
+                        'rgba(255, 206, 86, 0.6)',
+                        'rgba(75, 192, 192, 0.6)',
+                        'rgba(153, 102, 255, 0.6)',
+                        'rgba(255, 159, 64, 0.6)'
+                    ],
+                    borderColor: [
+                        'rgba(54, 162, 235, 1)',
+                        'rgba(255, 99, 132, 1)',
+                        'rgba(255, 206, 86, 1)',
+                        'rgba(75, 192, 192, 1)',
+                        'rgba(153, 102, 255, 1)',
+                        'rgba(255, 159, 64, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'CO Distribution in Question Papers (Total: {{ co_values | sum }})',
+                        font: {
+                            size: 16
+                        }
+                    },
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            precision: 0
+                        }
+                    }
+                }
+            }
+        });
+        
+        // BL Distribution Chart
+        const blCtx = document.getElementById('blDistributionChart').getContext('2d');
+        const blChart = new Chart(blCtx, {
+            type: 'pie',
+            data: {
+                labels: {{ bl_labels | tojson }},
+                datasets: [{
+                    label: 'BL Distribution',
+                    data: {{ bl_values | tojson }},
+                    backgroundColor: [
+                        'rgba(54, 162, 235, 0.6)',
+                        'rgba(255, 99, 132, 0.6)',
+                        'rgba(255, 206, 86, 0.6)',
+                        'rgba(75, 192, 192, 0.6)',
+                        'rgba(153, 102, 255, 0.6)',
+                        'rgba(255, 159, 64, 0.6)'
+                    ],
+                    borderColor: [
+                        'rgba(54, 162, 235, 1)',
+                        'rgba(255, 99, 132, 1)',
+                        'rgba(255, 206, 86, 1)',
+                        'rgba(75, 192, 192, 1)',
+                        'rgba(153, 102, 255, 1)',
+                        'rgba(255, 159, 64, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Bloom\'s Taxonomy Level Distribution (Total: {{ bl_values | sum }})',
+                        font: {
+                            size: 16
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Function to fetch filtered chart data and update charts
+        function updateCharts() {
+            const department = document.getElementById('filter-department').value;
+            const regulation = document.getElementById('filter-regulation').value;
+            const examType = document.getElementById('filter-exam-type').value;
+            const paperType = document.getElementById('filter-paper-type').value;
+            
+            // Show loading state
+            document.querySelectorAll('.chart-container').forEach(container => {
+                container.classList.add('loading');
+                container.style.opacity = '0.6';
+            });
+            
+            // Fetch filtered data
+            fetch(`/get_filtered_chart_data?department=${department}&regulation=${regulation}&exam_type=${examType}&paper_type=${paperType}`)
+                .then(response => response.json())
+                .then(data => {
+                    // Update CO chart
+                    coChart.data.labels = data.co_labels;
+                    coChart.data.datasets[0].data = data.co_values;
+                    coChart.options.plugins.title.text = `CO Distribution in Question Papers (Total: ${data.co_total})`;
+                    coChart.update();
+                    
+                    // Update BL chart
+                    blChart.data.labels = data.bl_labels;
+                    blChart.data.datasets[0].data = data.bl_values;
+                    blChart.options.plugins.title.text = `Bloom's Taxonomy Level Distribution (Total: ${data.bl_total})`;
+                    blChart.update();
+                    
+                    // Remove loading state
+                    document.querySelectorAll('.chart-container').forEach(container => {
+                        container.classList.remove('loading');
+                        container.style.opacity = '1';
+                    });
+                })
+                .catch(error => {
+                    console.error('Error fetching chart data:', error);
+                    document.querySelectorAll('.chart-container').forEach(container => {
+                        container.classList.remove('loading');
+                        container.style.opacity = '1';
+                    });
+                });
+        }
+        
+        // Filter event listeners
+        document.getElementById('filter-department').addEventListener('change', updateCharts);
+        document.getElementById('filter-regulation').addEventListener('change', updateCharts);
+        document.getElementById('filter-exam-type').addEventListener('change', updateCharts);
+        document.getElementById('filter-paper-type').addEventListener('change', updateCharts);
+    });
+</script>
+{% endblock %}

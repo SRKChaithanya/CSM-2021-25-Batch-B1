@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header">
+            <h2>{% block template_title %}Template{% endblock %}</h2>
+        </div>
+        <div class="card-body">
+            <form {% if not readonly %}method="POST"{% else %}class="readonly"{% endif %}>
+                <h4 class="mb-3">Header Information</h4>
+                <div class="mb-3">
+                    <label class="form-label">Institution Name</label>
+                    <input type="text" name="institution" class="form-control"
+                           value="SRINIVASA RAMANUJAN INSTITUTE OF TECHNOLOGY"
+                           {% if readonly %}readonly{% else %}required{% endif %}>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">Autonomous Status</label>
+                    <input type="text" name="autonomous" class="form-control"
+                           value="{{ template.header.autonomous if template and template.header.autonomous else 'AUTONOMOUS' }}"
+                           {% if readonly %}readonly{% else %}required{% endif %}>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Exam Type</label>
+                    <input type="text" class="form-control" value="{{ exam_type }}" readonly>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Time (hours)</label>
+                        <input type="number" name="time_hours" class="form-control" 
+                               value="{{ template.header.time_hours if template else '' }}"
+                               {% if readonly %}readonly{% else %}required{% endif %}>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Maximum Marks</label>
+                        <input type="number" name="max_marks" class="form-control" 
+                               value="{{ template.header.max_marks if template else '' }}"
+                               {% if readonly %}readonly{% else %}required{% endif %}>
+                    </div>
+                </div>
+
+                <hr class="my-4">
+
+                <!-- Part A Section -->
+                <div class="card mb-4">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0">PART-A (2 Marks Questions)</h4>
+                        {% if not readonly %}
+                        <button type="button" class="btn btn-primary" onclick="addPartAQuestion()">Add Question</button>
+                        {% endif %}
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Q.No</th>
+                                        <th></th>
+                                        <th>Unit</th>
+                                        <th>Marks</th>
+                                        <th>CO</th>
+                                        <th>BL</th>
+                                        {% if not readonly %}
+                                        <th>Action</th>
+                                        {% endif %}
+                                    </tr>
+                                </thead>
+                                <tbody id="partABody">
+                                    {% if template and template.partA %}
+                                        {% for question in template.partA %}
+                                        <tr>
+                                            <td>{% if loop.index0 == 0 %}1{% else %}{% endif %}</td>
+                                            <td>{{ question.sub_qno }}</td>
+                                            <td>
+                                                {% if readonly %}
+                                                    <input type="text" class="form-control" value="Unit {{ question.unit }}" readonly>
+                                                {% else %}
+                                                    <select class="form-control unit-select" name="partA_unit[]" required>
+                                                        <option value="">Select Unit</option>
+                                                        {% for i in range(1, 6) %}
+                                                        <option value="{{ i }}" {% if question.unit == i %}selected{% endif %}>Unit {{ i }}</option>
+                                                        {% endfor %}
+                                                    </select>
+                                                {% endif %}
+                                            </td>
+                                            <td><input type="number" class="form-control" value="2" readonly></td>
+                                            <td>-</td>
+                                            <td>-</td>
+                                            {% if not readonly %}
+                                            <td>
+                                                <button type="button" class="btn btn-danger btn-sm" onclick="removeQuestion(this)">
+                                                    <i class="fas fa-trash"></i> Remove
+                                                </button>
+                                            </td>
+                                            {% endif %}
+                                        </tr>
+                                        {% endfor %}
+                                    {% endif %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Part B Section -->
+                <div class="card mb-4">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0">PART-B (Long Answer Questions)</h4>
+                        {% if not readonly %}
+                        <div class="d-flex align-items-center">
+                            <div class="me-3">
+                                <label class="form-label mb-0">Marks per question:</label>
+                                <input type="number" id="marksPerQuestion" class="form-control" value="8" min="5" max="16">
+                            </div>
+                            <button type="button" class="btn btn-primary" onclick="addPartBQuestion()">Add Question Pair</button>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Q.No</th>
+                                        <th>Unit</th>
+                                        <th>Marks</th>
+                                        <th>CO</th>
+                                        <th>BL</th>
+                                        {% if not readonly %}
+                                        <th>Action</th>
+                                        {% endif %}
+                                    </tr>
+                                </thead>
+                                <tbody id="partBBody">
+                                    {% if template and template.partB %}
+                                        {% for question in template.partB %}
+                                        <tr>
+                                            <td>{{ loop.index + 1 }}</td>
+                                            <td>
+                                                {% if readonly %}
+                                                    <input type="text" class="form-control" value="Unit {{ question.unit }}" readonly>
+                                                {% else %}
+                                                    <select class="form-control unit-select" name="partB_unit[]" required>
+                                                        <option value="">Select Unit</option>
+                                                        {% for i in range(1, 6) %}
+                                                        <option value="{{ i }}" {% if question.unit == i %}selected{% endif %}>Unit {{ i }}</option>
+                                                        {% endfor %}
+                                                    </select>
+                                                {% endif %}
+                                            </td>
+                                            <td><input type="number" class="form-control marks-input" value="{{ question.marks }}" {% if readonly %}readonly{% endif %}></td>
+                                            <td>-</td>
+                                            <td>-</td>
+                                            {% if not readonly %}
+                                            <td>
+                                                <button type="button" class="btn btn-danger btn-sm" onclick="removePartBQuestionPair(this)">
+                                                    <i class="fas fa-trash"></i> Remove
+                                                </button>
+                                            </td>
+                                            {% endif %}
+                                        </tr>
+                                        {% if loop.index % 2 == 0 %}
+                                        <tr class="or-row">
+                                            <td colspan="{% if readonly %}5{% else %}6{% endif %}" class="text-center fw-bold">OR</td>
+                                        </tr>
+                                        {% endif %}
+                                        {% endfor %}
+                                    {% endif %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                {% if not readonly %}
+                <input type="hidden" id="partAData" name="partA" value="">
+                <input type="hidden" id="partBData" name="partB" value="">
+
+                <div class="text-center">
+                    <button type="submit" class="btn btn-primary">{% block submit_button %}Save Template{% endblock %}</button>
+                </div>
+                {% endif %}
+            </form>
+
+            <div class="mt-4">
+                <a href="{{ url_for('regulations') }}" class="btn btn-secondary">Back to Regulations</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if not readonly %}
+<script src="{{ url_for('static', filename='js/template.js') }}"></script>
+{% endif %}
+{% endblock %}

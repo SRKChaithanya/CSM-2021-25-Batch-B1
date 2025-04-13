@@ -1,0 +1,97 @@
+<!-- PART-A Section -->
+<div class="section-a mb-4">
+    <h3 class="text-center">PART-A</h3>
+    <p class="text-center">(Answer the following, {{ template.partA|length }} X {{ template.partA[0].marks if template.partA else 2 }} = {{ (template.partA|length * (template.partA[0].marks if template.partA else 2)) }} Marks)</p>
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Q.No</th>
+                <th></th>
+                <th>Question</th>
+                <th>Marks</th>
+                <th>CO</th>
+                <th>BL</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for q in template.partA %}
+            <tr>
+                <td>1</td>
+                <td class="sub-question-label">{{ loop.index | char }}</td>
+                <td>
+                    <select class="form-select question-select" name="partA_{{ q.qno }}" required data-unit="{{ q.unit }}" data-part="A" onchange="validateSelection(this)">
+                        <option value="">Select Question</option>
+                    </select>
+                    {% if q.image_data %}
+                    <div class="question-image-container mt-2">
+                        <img src="data:image/png;base64,{{ q.image_data }}" 
+                             alt="Question image" 
+                             class="img-fluid question-image"
+                             style="max-width: 300px;">
+                    </div>
+                    {% endif %}
+                </td>
+                <td class="text-center">2M</td>
+                <td class="co-display text-center"></td>
+                <td class="bl-display text-center"></td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- PART-B Section -->
+<div class="section-b">
+    <h3 class="text-center">PART-B</h3>
+    <p class="text-center">(Answer all five units, {{ (template.partB|length / 2)|int }} X {{ template.partB[0].marks if template.partB else 8 }} = {{ ((template.partB|length / 2)|int) * (template.partB[0].marks if template.partB else 8) }} Marks)</p>
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Q.No</th>
+                <th></th>
+                <th>Question</th>
+                <th>Marks</th>
+                <th>CO</th>
+                <th>BL</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% set qno = namespace(value=2) %}
+        {% for q in template.partB %}
+            {% if loop.index0 % 2 == 0 %}
+                {% set qno.value = qno.value + 1 %}
+            {% endif %}
+            <tr class="question-row" data-original-marks="{{ q.marks if q.marks else 8 }}">
+                <td style="white-space: nowrap;">
+                    {{ qno.value }}
+                    <button type="button" class="btn btn-sm btn-link split-button p-0 ms-1" onclick="toggleSplit(this)">+</button>
+                </td>
+                <td class="sub-question-label"></td>
+                <td>
+                    <select class="form-select question-select" name="partB_{{ q.qno }}" required data-unit="{{ q.unit }}" data-part="B" onchange="validateSelection(this)">
+                        <option value="">Select Question</option>
+                    </select>
+                    {% if q.image_data %}
+                    <div class="question-image-container mt-2">
+                        <img src="data:image/png;base64,{{ q.image_data }}" 
+                             alt="Question image" 
+                             class="img-fluid question-image"
+                             style="max-width: 300px;">
+                    </div>
+                    {% endif %}
+                </td>
+                <td>
+                    <input type="number" class="form-control marks-input" name="marks_{{ q.qno }}" value="{{ q.marks if q.marks else 8 }}" min="1">
+                </td>
+                <td class="co-display text-center"></td>
+                <td class="bl-display text-center"></td>
+            </tr>
+            {% if loop.index % 2 == 1 %}
+            <tr>
+                <td colspan="6" class="text-center">OR</td>
+            </tr>
+            {% endif %}
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
