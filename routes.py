@@ -291,6 +291,7 @@ def delete_regulation(regulation_id):
         return redirect(url_for('regulations'))
 
     try:
+        Template.query.filter_by(regulation_id=regulation_id).delete()
         db.session.delete(regulation)
         db.session.commit()
         flash('Regulation deleted successfully!', 'success')
